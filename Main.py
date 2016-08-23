@@ -1,6 +1,7 @@
 from pyDNS.Server import DNSServer
 from pyDNS.Request import Request
 from struct import unpack_from
+from pyDNS.util import *
 server = DNSServer()
 
 def on_recv(data, address):
@@ -8,20 +9,15 @@ def on_recv(data, address):
     print("DATA:")
     print(data)
     print("----------")
-    mid = unpack_from("bb", data, 0)
-    theid = (mid[0] << 8) + mid[1]
-    print mid
-    print theid
     req = Request(data)
-    print "id: " + str(req.id)
-    print "Query(0) / Response(1): " + str(req.qr)
-    print "Opcode: " + str(req.opcode)
-    print "Authorative answer flag: " + str(req.aa)
-    print "Recursion desired: " + str(req.rd)
-    print "Question Count: " + str(req.qdcount)
-    print req.questions
-    print req.raw_questions
-    print req.raw_body
+    print "--"
+    XX = headerdict2bytes(req.headers)
+    print XX
+    print req.raw_headers
+    print XX == req.raw_headers
+    print "--"
+    print req.headers
+
     print("----------")
 
 server.on_receive = on_recv
