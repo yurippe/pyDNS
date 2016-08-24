@@ -10,14 +10,24 @@ def on_recv(data, address):
     print(data)
     print("----------")
     req = Request(data)
-    print "--"
-    XX = headerdict2bytes(req.headers)
-    print XX
-    print req.raw_headers
-    print XX == req.raw_headers
-    print "--"
+    print "-- HEAD"
     print req.headers
-
+    print "Original"
+    print req.raw_headers
+    print "Generated"
+    gen = headerdict2bytes(req.headers)
+    print gen
+    print "Equality:"
+    print gen == req.raw_headers
+    print "-- DATA"
+    print req.data
+    print "Original"
+    print req.raw_data
+    print "Generated"
+    gen = datadict2bytes(req.data)
+    print gen
+    print "Equality:"
+    print gen == req.raw_data
     print("----------")
 
 server.on_receive = on_recv

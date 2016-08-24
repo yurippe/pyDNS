@@ -17,3 +17,4 @@ class Request(object):
         self.data_bytes = string2bytearray(self.raw_data)
 
         self.headers = parseDNSHeader(self.header_bytes)
+        self.data = parseDNSData(self.data_bytes, self.headers)

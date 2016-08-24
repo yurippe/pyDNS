@@ -50,6 +50,7 @@ def int2bytes(val, numofbytes=1):
         b = b[8:]
     return bytes
 
+
 def int2bits(val, numofbits=1):
     if val >= 2**numofbits:
         raise ValueError("Value out of bounds for " + str(numofbits) + " bits (" + str(val) + ")")
@@ -58,6 +59,22 @@ def int2bits(val, numofbits=1):
         b = "0" + b
     return [int(i) for i in b]
 
+
+def listurl2dottedurl(listurl):
+    return ".".join(["".join(sub) for sub in listurl])
+
+
+def dottedurl2listurl(dottedurl):
+    return [[l for l in sub_url] for sub_url in dottedurl.split(".")]
+
+
+def listurl2bytes(listurl):
+    bytes = []
+    for suburl in listurl:
+        bytes += int2bytes(len(suburl), 1)
+        bytes += string2bytearray("".join(suburl))
+    bytes += int2bytes(0)
+    return bytes
 
 
 def parseDNSHeader(header_bytes):
@@ -85,6 +102,51 @@ def parseDNSHeader(header_bytes):
         "ARCOUNT": bytes2int(header_bytes[10:12]),      #Additional Record Count: Specifies the number of RRs in the Additional section
     }
 
+def parseDNSData(body_bytes, header_dict):
+    """Requires body_bytes to be a 2 dimensional 'array' so we can access individual bits of each byte"""
+    body_dict = {"QUESTIONS_SECTION": {"QUESTIONS" : [], "START": 0, "STOP": -1},
+                 "ANSWER_SECTION": {"ANSWERS": [], "START": -1, "STOP": -1},
+                 "AUTHORITY_SECTION": {"AUTHORITY": [], "START": -1, "STOP": -1},
+                 "ADDITINAL_SECTION": {"ADDITIONAL": [], "START": -1, "STOP": -1}}
+    i = 0 #global index for body
+
+    #First parse all questions, based on the header:
+
+    for question in xrange(header_dict["QDCOUNT"]):
+        temp_question = {"URL": [], "DOTTEDURL": "", "QTYPE": 1, "QCLASS": 1, "OFFSET": i}
+        current = byte2int(body_bytes[i])
+        while current != 0:
+            i += 1
+            sub_domain = []
+            for letter in xrange(current):
+                sub_domain.append(chr(byte2int(body_bytes[i])))
+                i += 1
+            temp_question["URL"].append(sub_domain)
+            current = byte2int(body_bytes[i])
+        else:
+            i += 1
+            temp_question["QTYPE"] = bytes2int(body_bytes[i:i+2])
+            i += 2
+            temp_question["QCLASS"] = bytes2int(body_bytes[i:i+2])
+            i += 2
+
+        temp_question["DOTTEDURL"] = listurl2dottedurl(temp_question["URL"])
+
+        body_dict["QUESTIONS_SECTION"]["QUESTIONS"].append(temp_question)
+    body_dict["QUESTIONS_SECTION"]["STOP"] = i
+
+    return body_dict
+
+def datadict2bytes(d_dict, raw=False):
+    bytes = []
+    for question in d_dict["QUESTIONS_SECTION"]["QUESTIONS"]:
+        bytes += listurl2bytes(question["URL"])
+        bytes += int2bytes(question["QTYPE"], 2)
+        bytes += int2bytes(question["QCLASS"], 2)
+
+    if raw:
+        return bytes
+    return bytearray2string(bytes)
 
 def headerdict2bytes(h_dict, raw=False):
     #1st and 2nd Bytes
@@ -117,5 +179,8 @@ if __name__ == "__main__":
     assert int2bytes(32767,2) == [b127, b255]
     assert int2bytes(65535,2) == [b255, b255]
 
-
+    hworld = [["h", "e", "l", "l", "o"], ["w", "o", "r", "l", "d"]]
+    assert dottedurl2listurl("hello.world") == hworld
+    assert listurl2dottedurl(hworld) == "hello.world"
+    assert listurl2dottedurl(dottedurl2listurl("this.should.always.work.com")) == "this.should.always.work.com"
     print("Passed unit tests")
