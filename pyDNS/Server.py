@@ -9,7 +9,7 @@ class DNSServer(object):
         self.port = port
 
     @staticmethod
-    def on_receive(data, address):
+    def on_receive(data, address, sock):
         print("Received %s bytes from %s"%(len(data), address))
         print("DATA:")
         print(data)
@@ -22,4 +22,4 @@ class DNSServer(object):
         sock.bind(localaddr)
         while True:
             data, address = sock.recvfrom(self.BUFFER_SIZE)
-            self.on_receive(data, address)
+            self.on_receive(data, address, sock)

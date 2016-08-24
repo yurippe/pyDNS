@@ -1,15 +1,15 @@
 from pyDNS.Server import DNSServer
-from pyDNS.Request import Request
+from pyDNS.Request import Packet
 from struct import unpack_from
 from pyDNS.util import *
 server = DNSServer()
 
-def on_recv(data, address):
+def on_recv(data, address, sock):
     print("Received %s bytes from %s"%(len(data), address))
     print("DATA:")
     print(data)
     print("----------")
-    req = Request(data)
+    req = Packet(data)
     print "-- HEAD"
     print req.headers
     print "Original"
