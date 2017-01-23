@@ -1,7 +1,7 @@
 from pyDNS.Server import DNSServer
 from pyDNS.Request import Packet
-from struct import unpack_from
-from pyDNS.util import *
+from pyDNS.util import string2bytearray
+
 server = DNSServer()
 
 def on_recv(data, address, sock):
@@ -9,25 +9,10 @@ def on_recv(data, address, sock):
     print("DATA:")
     print(data)
     print("----------")
-    req = Packet(data)
-    print "-- HEAD"
-    print req.headers
-    print "Original"
-    print req.raw_headers
-    print "Generated"
-    gen = headerdict2bytes(req.headers)
-    print gen
-    print "Equality:"
-    print gen == req.raw_headers
-    print "-- DATA"
-    print req.data
-    print "Original"
-    print req.raw_data
-    print "Generated"
-    gen = datadict2bytes(req.data)
-    print gen
-    print "Equality:"
-    print gen == req.raw_data
+    print string2bytearray(data[:12])
+    print("----------------")
+    req = Packet.from_binary(data)
+    print(req)
     print("----------")
 
 server.on_receive = on_recv
