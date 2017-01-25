@@ -16,7 +16,11 @@ class Index(object):
         self.i += incr
 
 def _dotted2string(dottedarray):
-    return ""
+    """
+    >>> _dotted2string(_string2dotted("www.test.com"))
+    'www.test.com'
+    """
+    return ".".join(["".join(subarr) for subarr in dottedarray])
 
 def _string2dotted(string):
     return string.split(".")
@@ -106,7 +110,10 @@ class Resource(object):
     @staticmethod
     def parse_from_data(data, index):
         NAME = _parse_label_or_pointer(data, index)
-        index.inc()
+        index.inc() #TODO This doesn't work as intended,
+        #seems to be a problem with parsing pointers, since I got a response with a pointer in it
+        #comment out the line and it works for pointers, but that is too inconsistent with
+        #how Question handles it's parsing
         TYPE = bytes2int(data[index.i:index.i+2])
         index.inc(2)
         CLASS = bytes2int(data[index.i:index.i+2])
@@ -168,10 +175,7 @@ class Packet(object):
         answers     = []
         nameservers = []
         additionals = []
-        print(QDCOUNT)
-        print(ANCOUNT)
-        print(NSCOUNT)
-        print(ARCOUNT)
+
         for q in range(QDCOUNT):
             questions.append(Question.parse_from_data(body, i))
         for r in range(ANCOUNT):
@@ -278,3 +282,8 @@ class Packet(object):
         z  = "000" if self.z == 0 else str(self.z)
         return "Message ID: %d\nQR: %s\nOPCODE: %d\nAA: %s\nTC: %s\nRD: %s\nRA: %s\nZ: %s\nRCODE: %d\nQuestions: %d\nAnswers: %d\nNameservers: %d\nAdditionals: %d" % (
                 self.uid, qr, self.opcode, aa, tc, rd, ra, z, self.rcode, len(self.questions), len(self.answers), len(self.nameservers), len(self.additionals))
+
+if __name__ == "__main__":
+
+    import doctest
+    doctest.testmod()
