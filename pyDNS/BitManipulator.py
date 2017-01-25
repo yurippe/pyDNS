@@ -103,9 +103,31 @@ def bytes2int(byte_array):
     for byte in byte_array:
         s = (s << 8) + byte
     return s
+
+def int2bytes(integer, bytelength=1):
+    bytearr = []
+    mask = 255
+    for i in range(bytelength):
+        masked = integer & (mask << (i*8))
+        downsized = masked >> (i*8)
+        bytearr = [downsized] + bytearr
+    return bytearr
     
+class Byte(object):
+    def __init__(self, bits="00000000"):
+        self.bits = [int(b) for b in bits.replace(" ", "")]
+
+    def set_bit(self, index, val):
+        if val: self.bits[index] = 1
+        else: self.bits[index] = 0
+
+    def toInt(self):
+        return int("".join([str(b) for b in self.bits]), 2)
+
+    def toIntArray(self):
+        return [self.toInt()]
+
 if __name__ == "__main__":
 
     import doctest
     doctest.testmod()
-    print("All tests passed")
