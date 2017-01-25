@@ -3,7 +3,7 @@ sys.path.append('../')
 import pyDNS
 import pyDNS.BitManipulator as BM
 
-from pyDNS.Request import Packet, Question, Resource
+from pyDNS.Request import Packet, Question, Resource, Index
 import TestPackages
 
 packet = Packet.from_binary(str(TestPackages.SimplePackageWithOnly1Question))
@@ -28,5 +28,5 @@ assert pack2.toBinary() == packet.toBinary()
 
 print("All tests passed")
 
-pack2.questions[0].qtype = 1
+pack2.questions[0].qtype = 16
 print pack2.ask("8.8.8.8").answers[0]

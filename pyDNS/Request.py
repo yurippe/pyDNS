@@ -46,8 +46,9 @@ def _parse_label_or_pointer(data, index):
             val.append(_parse_label(data, index))
             index.inc()
         elif read_type == 3: #Pointer
-            val = _parse_pointer(data, index) #Because pointers terminate this should be ok, but have in mind this area
-            index.inc(2) #pointers are 2 bytes long
+            pval = _parse_pointer(data, index) #Because pointers terminate this should be ok, but have in mind this area
+            index.inc() #pointers are 2 bytes long, so why does this work?
+            return val + pval
         length = data[index.i]
     return val
 
