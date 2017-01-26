@@ -110,7 +110,7 @@ def int2bytes(integer, bytelength=1):
     for i in range(bytelength):
         masked = integer & (mask << (i*8))
         downsized = masked >> (i*8)
-        bytearr = [downsized] + bytearr
+        bytearr = [int(downsized)] + bytearr
     return bytearr
     
 class Byte(object):

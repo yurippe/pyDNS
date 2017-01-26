@@ -28,5 +28,5 @@ assert pack2.toBinary() == packet.toBinary()
 
 print("All tests passed")
 
-pack2.questions[0].qtype = 16
-print pack2.ask("8.8.8.8").answers[0]
+pack2.questions[0].qtype = 1
+print BM.int2bytes(pack2.ask("8.8.8.8").answers[0].rdata.strategy.ip_address,4)

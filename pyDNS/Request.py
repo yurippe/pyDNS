@@ -1,5 +1,7 @@
 import socket
 from BitManipulator import read_bits, bytes2int, int2bytes, Byte
+from util import Index, parse_label_or_pointer, string2dotted, dotted2string
+from RDataStrategies import get_strategy
 #http://www.iana.org/assignments/dns-parameters/dns-parameters.xhtml
 request_types = {1 : "A", 2: "NS", 5: "CNAME", 6: "SOA", 11: "WKS", 12: "PTR", 15: "MX", 16: "TXT", 33: "SRV",
                  28: "AAAA", 255: "*"}
@@ -7,65 +9,24 @@ request_types = {1 : "A", 2: "NS", 5: "CNAME", 6: "SOA", 11: "WKS", 12: "PTR", 1
 #Parsing information:
 #http://www.tcpipguide.com/free/t_DNSMessageHeaderandQuestionSectionFormat.htm
 
-class Index(object):
 
-    def __init__(self, i=0):
-        self.i = i
 
-    def inc(self, incr=1):
-        self.i += incr
-
-def _dotted2string(dottedarray):
-    """
-    >>> _dotted2string(_string2dotted("www.test.com"))
-    'www.test.com'
-    """
-    return ".".join(["".join(subarr) for subarr in dottedarray])
-
-def _string2dotted(string):
-    return string.split(".")
-
-def _parse_label(data, index):
-    length = read_bits(data[index.i], 2, 6)
-    name = []
-    for l in range(length):
-        index.inc()
-        name.append(chr(data[index.i]))
-    return name
-
-def _parse_pointer(data, index):
-    offset = bytes2int(data[index.i: index.i + 2]) & 0x3FFF #16383 (DEC) We & with 00111111 11111111 to get rid of the first 2 bits
-    return _parse_label_or_pointer(data, Index(offset-12))  #Offset - header length (12)
-        
-def _parse_label_or_pointer(data, index):
-    val = []
-    length = data[index.i]
-    while length > 0:
-        read_type = read_bits(length, 0, 2)
-        if read_type == 0: #Label
-            val.append(_parse_label(data, index))
-            index.inc()
-        elif read_type == 3: #Pointer
-            pval = _parse_pointer(data, index) #Because pointers terminate this should be ok, but have in mind this area
-            index.inc() #pointers are 2 bytes long, so why does this work?
-            return val + pval
-        length = data[index.i]
-    return val
 
 class RData(object):
 
     @staticmethod
-    def parse_from_data(data, index):
-        return RData()
+    def parse_from_data(rdtype, rdlength, data, index):
+        s = get_strategy(rdtype, rdlength, data, index)
+        return RData(s)
 
-    def __init__(self):
-        pass
+    def __init__(self, strategy):
+        self.strategy = strategy
 
 class Question(object):
 
     @staticmethod
     def parse_from_data(data, index):
-        QNAME = _parse_label_or_pointer(data, index)
+        QNAME = parse_label_or_pointer(data, index)
         index.inc()
         QTYPE = bytes2int(data[index.i:index.i+2])
         index.inc(2)
@@ -83,7 +44,7 @@ class Question(object):
             qclass (int)        - Class of resource records being requested. Most common value is 1 for IN or Internet
         """
         if type(qname) == str:
-            qname = _string2dotted(qname)
+            qname = string2dotted(qname)
         self.qname  = qname
         self.qtype  = qtype
         self.qclass = qclass
@@ -110,7 +71,7 @@ class Resource(object):
 
     @staticmethod
     def parse_from_data(data, index):
-        NAME = _parse_label_or_pointer(data, index)
+        NAME = parse_label_or_pointer(data, index)
         index.inc() #TODO This doesn't work as intended,
         #seems to be a problem with parsing pointers, since I got a response with a pointer in it
         #comment out the line and it works for pointers, but that is too inconsistent with
@@ -123,8 +84,7 @@ class Resource(object):
         index.inc(4)
         RDLENGTH = bytes2int(data[index.i:index.i+2])
         index.inc(2)
-        RDATA = RData.parse_from_data(data, index)
-        index.inc(RDLENGTH)
+        RDATA = RData.parse_from_data(CLASS, RDLENGTH, data, index)
         return Resource(NAME, TYPE, CLASS, TTL, RDATA)
 
     def __init__(self, name, tpe, cls, ttl, rdata):
